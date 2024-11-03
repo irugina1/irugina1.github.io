@@ -1,0 +1,178 @@
+---
+layout: post
+---
+
+<style>
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+}
+</style>
+
+
+<h1> <a href="https://www.youtube.com/watch?v=LtGdn9h5OSQ">Hopfield networks</a> </h1>
+
+<h2>Introduction</h2>
+
+Network with $N$ neurons: 
+
+<ul>
+	<li>no self-loops</li>
+	<li>symmetric $w_{ij} = w_{ji}$</li>
+</ul>
+
+<br>
+
+Each neuron has values $y_i = \pm 1$ and, at any timestep, receives a field:
+
+\begin{equation}
+\label{eq:field}
+\sum_{j \neq i} w_{ji}y_j + b_i
+\end{equation}
+
+Behavior:
+
+<ul>
+	<li>If the sign of the field matches its own sign it doesn't respond</li>
+	<li>If the sign of the field opposes its own sign, it “flips” to
+match the sign of the field</li>
+</ul>
+
+<h2>Convergence</h2>
+Say a neuron $i$ has value $y_i^-$ before some timestep and $y_i^+$ after. Look at: 
+
+\begin{equation*}
+y_i^+ ( \sum_{j \neq i} w_{ji}y_j + b_i ) - y_i^- ( \sum_{j \neq i} w_{ji}y_j + b_i )
+\end{equation*}
+
+This quantity is either $0$ or positive, so every flip of a neuron is guaranted to increase $y_i ( \sum_{j \neq i} w_{ji}y_j + b_i )$.
+<br><br>
+Sum this quantity over all nodes to obtain 
+
+\begin{equation*}
+D(y_1, y_2, ..., y_N) = \sum_i y_i \sum_{j \neq i} w_{ji}y_j + b_i \\ = \sum_{i, j \neq i}  w_{ij}y_i y_j + \sum_i  b_i  y_i 
+\end{equation*}
+
+Every flip of a neuron results in an increase of global quantity $D$. 
+
+<br><br>
+
+$D$ is bounded so any sequence of flips must converge in a finite number of steps. Introduce energy $E$: 
+
+\begin{equation*}
+E = -D(y_1, y_2, ..., y_N) = - \sum_{i, j \neq i}  w_{ij}y_i y_j - \sum_i  b_i  y_i 
+\end{equation*}
+
+
+Typically will not utilize bias: it is similar to having a single extra neuron that is pegged to 1. Work with $E = -\frac{1}{2}y^TWy$.
+
+<h2>Content-addressable memory</h2>
+
+The system evolves towards one of its stable configurations (local energy minima):
+<ul>
+	<li>spin glasses analogy.</li>
+	<li>any small jitter from such a stable configuration returns it to the stable configuration. </li>
+</ul>
+
+The system <em>remembers</em> its stable state and returns to it $\implies$ associative memory.
+
+
+<h2>How to store <em>specific</em> patterns?</h2>
+
+Design weights $w_{ij}$ s.t. energy hits local minimum at desired pattern $y = \{ y_i \}$.
+
+<br><br>
+
+For a single pattern, the Hebbian Learning rule $w_{ij} = y_i y_j$ makes $y_i$ stable.
+
+<br><br>
+Hebbian Learning rule for storing $N_p$ patterns $y^p = \{ y^p_i \}$:
+\begin{equation}
+\label{eq:hebbian_weights}
+w_{ij} = \sum_{y_p}  y_i^p y_j^p
+\end{equation}
+From \ref{eq:field}, a pattern $y_p$ is stable $\iff$:
+\begin{equation*}
+y_i^p \sum_j w_{ij}y_j^p > 0, \forall i
+\end{equation*}
+Using \ref{eq:hebbian_weights} the above becomes:
+
+\begin{equation*}
+y_i^p \frac{1}{N} \sum_j \sum_{k \neq p} y_i^k  y_j^k y_j^p > -1 , \forall i
+\end{equation*}
+
+<h3>How to store $K$ orthogonal patterns?</h3>
+$y_p$ is stored if $\text{sign}{(Wy_p)} = y_p$  - want this to hold for all targets $y_p$ and no other patterns.
+<h4> Hebbian Learning </h4>
+Described above: $W = YY^T - N_pI \implies W = YY^T$.
+<h4> Geometric Interpretation</h4>
+Optimize quadratic energy function on lattice.
+<br><br>
+Notice that $\text{sign}{(Wy_p)} = y_p$ condition clearly holds if we choose $W$ such that $y_p$ is eigenvector with positive eigenvalue. This is what Hebbian learning does in our case (we assumed orthogonal target patterns). 
+<br>
+It doesn't work out in Hebbian Learning case because: Hebbian rule makes all corresponding eigenvectors have the same eigenvalue $\lambda = 1$. So then not just the target patterns are eigenvectors of $W$, but any vector in the subspace spanned by targets $\{y_p\}$. This is useless: this network stores literally any pattern so there are many more spurious memories than useful information.
+<br><br>
+This failure gave us an insight though: we need to worry more about not storing spurious memories.
+<h4> Optimization Approach </h4>
+We do so by taking an optimization-based approach and think of a good objective:
+\begin{equation*}
+\hat{W} = \arg\min_{W} \left( \sum_{y\in Y_p} E(y) - \sum_{y {\not\in} Y_p} E(y) \right)
+\end{equation*}
+We added second term: push non-target patterns up!
+SGD update for this objective is:
+\begin{equation*}
+W \leftarrow W + \eta \left( \sum_{y\in Y_p} yy^T - \sum_{y {\not\in} Y_p} yy^T \right)
+\end{equation*}
+This isn't quite it either:
+<ul>
+<li>second term is a sum over exponentially many terms</li>
+<li>we only need to raise spurious minima, not all patterns that aren't targets..</li>
+<li>even better: raise neighborhood of a target to make that pattern a valley!</li>
+</ul>
+This leads us to following algorithm:
+<ul>
+<li>initialize $W$</li>
+<li>until convergence:</li>
+  <ul>
+  <li>sample target pattern $y_p$</li>
+  <li>initialize network at $y_p$ and evolve for a few steps(2-4) - end up at $y_d$</li>
+  <li>update $W \leftarrow W + \eta (y_py_p^T - y_dy_d^T)$</li>
+  </ul>
+</ul>
+<h2>Restricted Boltzmann machine</h2>
+<h3>Stochastic Hopfield Networks</h3>
+Let $z_i = \frac{1}{T}\sum w_{ij}y_j$. Then values of $y_i$ are given by logistic distribution 
+\begin{equation*}
+p(y_i = 1) = \sigma(z_i)
+\end{equation*}
+Probability of state $S$ is given by Boltzmann distribution 
+\begin{equation*}
+p(S) \propto \text{exp}(-\frac{E(S)}{T})
+\end{equation*}
+<h4>Inference</h4>
+Running inference is quite different from deterministic Hopfield networks. We need to simulate multiple states (i.e. need to draw from $P(S)$). We randomly initialize the network, let it evolve, and look at final few iterations. Then we compute 
+\begin{equation*}
+y = \frac{1}{M}\sum_{i=L-M+1}^Ly_t
+\end{equation*}
+Finally, treat this as a probability and assign bit $i$ to 1 $\iff y_i > 0.5$.
+<h4>Training</h4>
+Training is very similar to deterministic Hopfield networks. We want to do maximum likelihood training with:
+\begin{equation*}
+\mathbb{E}[\log{p}] = \frac{1}{N} \sum_s \log{p(s)} = \frac{1}{N} \sum_s \left( \sum_{i, j} w_{ij}s_is_j \right) - \log \left( \sum_{s'} \exp(\sum_{i,j} w_{ij}s_i's_j') \right)
+\end{equation*}
+Gradient of this objective is
+\begin{equation*}
+\frac{1}{N}\sum_s s_i s_j - \sum_{s'} \frac{\text{exp}(w_{ij}s_i's_j')}{\sum_{s'}\text{exp}(w_{ij}s_i's_j')}s_i's_j'
+\end{equation*}
+<ul>
+<li>First term is expected value of $s_is_j$ over target patterns.</li>
+<li>Second term is $\sum_{s'}p(s')s_i's_j'$ and is intractable. We compute it by sampling and estimate as $\frac{1}{M} \sum_{s' \in S_{\text{simulated}}}s_i's_j'$.</li>
+</ul>
+<h3>Boltzmann machine</h3>
+Introduce hidden units to increase network capacity and augment train dataset to contain target states $S = (U,H)$ where hidden patterns $H$ are drawn from marginalized probability distribution. Do this by setting visible neurons and simulating a few hidden states $H$.
+<br>
+This is time consuming because we need to do the simulations from above to calculate second term in gradient update rule, as well as this new simulation step to expand train set.
+<h3>Restricted Boltzmann machine</h3>
+Build bipartite graph.

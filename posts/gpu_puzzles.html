@@ -1,0 +1,135 @@
+<blockquote>
+ <pre>
+   <code>
+      # 1) map
+      def call(out, a) -> None:
+          local_i = cuda.threadIdx.x
+          out[local_i] = a[local_i] + 10
+      
+      # 2) zip
+      def call(out, a, b) -> None:
+          local_i = cuda.threadIdx.x
+          out[local_i] = a[local_i] + b[local_i]
+      
+      # 3) guards
+      def call(out, a, size) -> None:
+          local_i = cuda.threadIdx.x
+          if local_i >= size:
+              return
+          out[local_i] = a[local_i] + 10
+      
+      # 4) map 2d
+      def call(out, a, size) -> None:
+          local_i = cuda.threadIdx.x
+          local_j = cuda.threadIdx.y
+          if local_i >= size or local_j >= size:
+              return
+          out[local_i, local_j] = a[local_i, local_j] + 10
+      
+      # 5) broascasting
+      def call(out, a, b, size) -> None:
+          local_i = cuda.threadIdx.x
+          local_j = cuda.threadIdx.y
+          if local_i >= size or local_j >= size:
+              return
+          out[local_i, local_j] = a[local_i, 0] + b[0, local_j]
+      
+      # 6) blocks
+      def call(out, a, size) -> None:
+          i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
+          if i < size:
+              out[i] = a[i] + 10
+      
+      # 7) blocks 2d
+      def call(out, a, size) -> None:
+          i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
+          j = cuda.blockIdx.y * cuda.blockDim.y + cuda.threadIdx.y
+          if i < size and j < size:
+              out[i,j] = a[i,j] + 10 
+      
+      # 8) shared
+      def call(out, a, size) -> None:
+          shared = cuda.shared.array(TPB, numba.float32)
+          i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
+          local_i = cuda.threadIdx.x
+          if i < size:
+              shared[local_i] = a[i]
+      		    cuda.syncthreads()
+              out[i] = shared[local_i] + 10
+      
+      # 9) sum pool with shared memory
+      def call(out, a, size) -> None:
+          shared = cuda.shared.array(TPB, numba.float32)
+          i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
+          local_i = cuda.threadIdx.x
+          # cache a[i] because it will be used by 2 more threads in block
+          shared[local_i] = a[i]
+          cuda.syncthreads()
+          result = shared[local_i]
+          if local_i - 1 >= 0:
+              result += shared[local_i - 1]
+          if local_i - 2 >= 0:
+              result += shared[local_i - 2]
+          out[i] = result
+      
+      
+      # 10) dot product
+      def call(out, a, b, size) -> None:
+          shared = cuda.shared.array(TPB, numba.float32)
+      
+          i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
+          local_i = cuda.threadIdx.x
+      
+          shared[local_i] = a[i] * b[i]
+          cuda.syncthreads()
+          if i == 0:
+              result = 0
+              for j in range(size):
+                  result += shared[j]
+              out[0] = result
+      
+      # 11) 1D convolution general case
+      def call(out, a, b, a_size, b_size) -> None:
+          i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
+          local_i = cuda.threadIdx.x
+      
+          a_shared = cuda.shared.array(TPB_MAX_CONV, numba.float32)
+          b_shared = cuda.shared.array(MAX_CONV, numba.float32)
+      
+          if i < a_size:
+              a_shared[local_i] = a[i]
+          if local_i < b_size:
+              b_shared[local_i] = b[local_i]
+          if local_i >= b_size and local_i < MAX_CONV + b_size and i + TPB - b_size < a_size:
+              a_shared[TPB + local_i - b_size] = a[i + TPB - b_size]
+          cuda.syncthreads()
+              
+          result = 0
+          for j in range(b_size):
+              if i + j < a_size:
+                  result = result + a_shared[local_i + j] * b_shared[j]
+          if i < a_size:
+              out[i] = result
+      
+      # 12) parallel prefix sum in shared memory
+      def call(out, a, size: int) -> None:
+          cache = cuda.shared.array(TPB, numba.float32)
+      
+          i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
+          local_i = cuda.threadIdx.x
+          if i < size:
+              cache[local_i] = a[i]
+          if i >= size:
+              cache[local_i] = a[0] # what i really want is cache[local_i] = 0
+          cuda.syncthreads()
+      
+          j = 1
+          while 2 ** j <= TPB:
+              if (i + 1) % (2 ** j) == 0:
+                  cache[local_i] = cache[local_i] + cache[local_i - 2 ** (j-1)]
+              j = j + 1
+          if local_i == 0:
+              out[cuda.blockIdx.x] = cache[TPB - 1]
+    </code>
+  </pre>
+</blockquote>

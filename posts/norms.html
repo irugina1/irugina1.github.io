@@ -1,0 +1,68 @@
+---
+layout: post
+---
+
+<style>
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+}
+</style>
+
+<h1>Norms</h1>
+
+
+
+<h2>Vector Norms</h2>
+
+<ul>
+
+ <li>$l_p$ norm family </li>
+
+ <li>quadratic norm family: for $P \in S^n_{++}$, $||x||_P = (x^T P x)^{\frac{1}{2}} = || P^{\frac{1}{2}} x ||_2$ </li>
+</ul>
+
+<h2>Matrix Norms</h2>
+
+
+ <h3>Frobenius norm</h3>  
+Frobenius norm of $X \in \mathbb{R}^{m \times n} $ (Euclidean norm of vector obtained by listing all entries):
+
+\begin{equation*}
+    ||X||_F = (\textbf{tr}(X^TX))^{\frac{1}{2}}
+\end{equation*}
+
+
+
+
+ <h3>Operator norm </h3>  
+ <b>Operator norm </b> of $X \in \mathbb{R}^{m \times n} $, induced by norms $||\cdot||_a$ on $\mathbb{R}^{m}$ and $||\cdot||_b$ on $\mathbb{R}^{n}$:
+
+\begin{equation*}
+    || X ||_{a,b} = \sup \{ ||Xu||_a \; \bigg{|} \; \; ||u||_b \leq 1 \}
+\end{equation*}
+
+
+ <h3>Spectral norm</h3>  
+
+When $||\cdot||_a$ and $||\cdot||_b$ are both Euclidean norms the operator norm of $X$ is its maximum singular value, also called the  <b>spectral norm</b> or $l_2$-norm of $X$.
+
+\begin{equation*}
+    ||X||_2 = \sigma_{max} (X) = (\lambda_{max}(X^TX)) ^ {\frac{1}{2}}
+\end{equation*}
+
+
+<h3>Nuclear Norm</h3>
+
+Dual of spectral norm is the nuclear norm, the sum of the singular values:
+
+\begin{equation*}
+    ||Z||_{2*} = \sup \{ \textbf{tr}(Z^TX) \; \bigg{|} \; \; ||X||_{2} \leq 1 \}
+\end{equation*}
+
+\begin{equation*}
+    ||Z||_{2*} = \sigma_1(Z) + ... +  \sigma_r(Z) = \textbf{tr}(Z^TZ)^{\frac{1}{2}}
+\end{equation*}
+

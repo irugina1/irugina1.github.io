@@ -1,0 +1,219 @@
+---
+layout: post
+---
+
+<style>
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+}
+</style>
+
+
+<h1>Variational Autoencoders</h1>
+
+
+<h2>Introduction</h2>
+
+<h4>Generative VS Discriminative Modeling</h4>
+
+Generative models learn underlying world-model, while discriminative models learn direct map from input to target. In large-data regimes discriminative methods are probably better. Generative models work well in semi-supervised settings. They allow us to incorporate: 
+<ul>
+<li>relevant information</li>
+<li>causal knowledge</li>
+</ul>
+
+
+<h4>Representation Learning</h4>
+
+More generally, think of generative modeling as an auxiliary task that allows us to learn better representations that are:
+<ul>
+<li>disentangled</li>
+<li>semantically meaningful</li>
+<li>statistically independent</li>
+<li>causal</li>
+</ul>
+
+<h4>Relation to Variational Inference (VI)</h4>
+
+The inference module models latent variables as a stochastic function of input variables, making VAEs an amortized inference method. Sampling induces noise in gradients required for learning. Variance is reduced through reparameterization trick. VAEs thus marry graphical models and deep learning.
+
+<h4>Comparison to GANs</h4>
+VAEs are likelihood-based models and thus generally achieve worse sample quality but are better density estimators than GANs.
+
+<h2>VAEs</h2>
+Consist of two independetly parameterized models:
+<ul>
+<li>encoder or inference or recognition module $q_{\phi}(z|x)$ that approximates posterior over latent variables.</li>
+<li>decoder or generative module $p_{\theta}(x,z) = p_{\theta}(x|z) \cdot p(z)$</li>
+</ul>
+
+<h4>ELBO</h4>
+We want to maximize the marginal data likelihood or model evidence. For a single datapoint $x$:
+\begin{equation*}
+ \log p_{\theta} (x) = \mathbb{E}_{q_{\phi}(z|x)} \log p_{\theta} (x) = \mathbb{E}_{q_{\phi}(z|x)} \log \frac{p_{\theta} (x, z)}{p_{\theta}(z|x)} = \mathbb{E}_{q_{\phi}(z|x)} \log \frac{p_{\theta} (x, z)}{q_{\phi}(z|x)} \frac{q_{\phi}(z|x)}{p_{\theta}(z|x)}
+\end{equation*}
+
+\begin{equation*}
+ \log p_{\theta} (x) =  \mathbb{E}_{q_{\phi}(z|x)} \log \frac{p_{\theta} (x, z)}{q_{\phi}(z|x)} + \mathbb{E}_{q_{\phi}(z|x)} \log\frac{q_{\phi}(z|x)}{p_{\theta}(z|x)}
+\end{equation*}
+
+First term is evidence lower bound or ELBO:
+\begin{equation*}
+\text{ELBO} = \mathbb{E}_{q_{\phi}(z|x)} \log \frac{p_{\theta} (x, z)}{q_{\phi}(z|x)}
+\end{equation*}
+
+Second term is KL divergence between approximate and real posterior:
+\begin{equation*}
+\text{D}_{\text{KL}}(q_{\phi}(z|x) | p_{\theta}(z|x)) = \mathbb{E}_{q_{\phi}(z|x)} \log\frac{q_{\phi}(z|x)}{p_{\theta}(z|x)}
+\end{equation*}
+
+So this KL measures two distances:
+<ul>
+<li>distance between real and approximate posterior</li>
+<li>distance between ELBO and marginal likelihood</li>
+</ul>
+
+We jointly optimize both $\phi$ and $\theta$ on the ELBO:
+\begin{equation*}
+\text{ELBO} = \mathbb{E}_{q_{\phi}(z|x)} \log \frac{p_{\theta} (x, z)}{q_{\phi}(z|x)} = \log p_{\theta} (x) - \text{D}_{\text{KL}}(q_{\phi}(z|x) | p_{\theta}(z|x))
+\end{equation*}
+Note this achieves two things at once:
+<ul>
+<li>maximize marginal likelihood</li>
+<li>minimize discrepency between real and approximate posteriors</li>
+</ul>
+
+<h4>Stochastic Gradient-Based Optimization</h4>
+
+Let $ \mathcal{L}_{\theta, \phi} (x) = \text{ELBO}(x)$. Optimization objective is sum of individual points' ELBO:
+\begin{equation*}
+\mathcal{L}_{\theta, \phi} (\mathcal{D}) = \sum_{x\in \mathcal{D}} \mathcal{L}_{\theta, \phi} (x)
+\end{equation*}
+<h6>Generative model parameters $\theta$</h6>
+\begin{equation*}
+\nabla_{\theta} \mathcal{L}_{\theta, \phi} (x) = \nabla_{\theta} \mathbb{E}_{q_{\phi}(z|x)} \log \frac{p_{\theta} (x, z)}{q_{\phi}(z|x)} = \nabla_{\theta} \mathbb{E}_{q_{\phi}(z|x)} \left [\log p_{\theta} (x, z) - \log q_{\phi}(z|x) \right] 
+\end{equation*}
+Since $\nabla_{\theta}$ and $\mathbb{E}_{q_{\phi}(z|x)}$ commute:
+\begin{equation*}
+\nabla_{\theta} \mathcal{L}_{\theta, \phi} (x) = \mathbb{E}_{q_{\phi}(z|x)}   \nabla_{\theta} \left [\log p_{\theta} (x, z) - q_{\phi}(z|x) \right] = \mathbb{E}_{q_{\phi}(z|x)}   \nabla_{\theta} \log p_{\theta} (x, z)
+\end{equation*}
+Unbiased MC estimator is given by $\nabla_{\theta} \mathcal{L}_{\theta, \phi} (x) \approx \nabla_{\theta} \log p_{\theta} (x, z) $ with $z \propto q_{\phi}(z|x)$.
+<h6>Inference model parameters $\phi$</h6>
+\begin{equation*}
+\nabla_{\phi}\mathcal{L}_{\theta, \phi} (x) = \nabla_{\phi}\mathbb{E}_{q_{\phi}(z|x)} \left [\log p_{\theta} (x, z) - \log q_{\phi}(z|x) \right]
+\end{equation*}
+This is more tricky because $ \nabla_{\phi}$ and $\mathbb{E}_{q_{\phi}(z|x)} $ do not commute. Reparameterization Trick: 
+\begin{equation*}
+z \propto q_{\phi}(z|x) \rightarrow z = g(\epsilon, \phi, x)
+\end{equation*}
+Move the stochasticity to variable $\epsilon$ that is independent of $x$ or $\phi$. Now, $z$ is a deterministic variable and we have "externalized the randomness". ELBO becomes:
+\begin{equation*}
+\mathbb{E}_{q_{\phi}(z|x)} \left [\log p_{\theta} (x, z) - \log q_{\phi}(z|x) \right]  \rightarrow \mathbb{E}_{p (\epsilon)} \left [\log p_{\theta} (x, z) - \log q_{\phi}(z|x) \right] 
+\end{equation*}
+and inference parameters gradient:
+\begin{equation*}
+\nabla_{\phi}\mathbb{E}_{q_{\phi}(z|x)} \left [\log p_{\theta} (x, z) - \log q_{\phi}(z|x) \right] \rightarrow \mathbb{E}_{p (\epsilon)} \nabla_{\phi} \left [\log p_{\theta} (x, z) - \log q_{\phi}(z|x) \right] 
+\end{equation*}
+<h6>Putting it all together</h6>
+Write ELBO as 
+\begin{equation*}
+\mathcal{L}_{\theta, \phi} (x) = \mathbb{E}_{p (\epsilon)} \left [\log p_{\theta} (x, z) - \log q_{\phi}(z|x) \right]
+\end{equation*}
+Unbiased Monte-Carlo estimator of single-point ELBO is:
+\begin{equation*}
+\widetilde{\mathcal{L}}_{\theta, \phi} (x) =\log p_{\theta} (x, z) - \log q_{\phi}(z|x)
+\end{equation*}
+with $\epsilon \propto p(\epsilon)$ and $z = g(\epsilon, \phi, x) $.
+Applying SGD on this objective is the algorithm called  Auto-Encoding Variational Bayes (AEVB) and the reparameterized MC estimator is called  Stochastic Gradient Variational Bayes (SGVB) estimator. 
+
+<h4>Computing $\log q_{\phi}(z|x)$</h4>
+We need $\log q_{\phi}(z|x)$ above. With $z = g(\epsilon, \phi, x) $ and change of variable formula:
+\begin{equation*}
+z = g(\epsilon, \phi, x) \implies \log q_{\phi}(z|x) = \log p(\epsilon)- \log d_{\phi} (x, \epsilon)
+\end{equation*}
+where the jacobian $ \frac{\partial z}{\partial \epsilon}$ gives:
+\begin{equation*} 
+\log d_{\phi} (x, \epsilon) = \log \left |\det \frac{\partial z}{\partial \epsilon} \right |
+\end{equation*}
+
+<h6>Factorized Gaussian posteriors</h6>
+\begin{equation*}
+ q_{\phi}(z|x)= \mathcal{N}(z; \mu, \text{diag}(\sigma^2))
+\end{equation*}
+where $\mu$ and $\sigma$ are given by the encoder neural network as a function of $x$. After reparameterization:
+\begin{equation*}
+\epsilon \propto \mathcal{N}(0,1)
+\end{equation*}
+\begin{equation*}
+ \mu, \log \sigma = \text{EncoderNeuralNet}_{\phi}(x)
+\end{equation*}
+\begin{equation*}
+z = \mu + \sigma \times \epsilon
+\end{equation*}
+Now $\log q_{\phi}(z|x)$ becomes:
+\begin{equation*}
+\log q_{\phi}(z|x) = \log p(\epsilon)- \log d_{\phi} (x, \epsilon) =  \log p(\epsilon) - \log \left |\det \text{diag}(\sigma)\right |
+\end{equation*}
+\begin{equation*}
+\log q_{\phi}(z|x) = \sum_i \left[ \log \mathcal{N}(\epsilon_i; 0,1) - \log \sigma_i \right]
+\end{equation*}
+<h6>Full-covariance Gaussian posterior</h6>
+\begin{equation*}
+ q_{\phi}(z|x)= \mathcal{N}(z; \mu, \Sigma)
+\end{equation*}
+Reparameterization that corresponds to Cholesky decomposition $\Sigma = L L^T$:
+\begin{equation*}
+\epsilon \propto \mathcal{N}(0,1)
+\end{equation*}
+\begin{equation*}
+z = \mu + L\epsilon
+\end{equation*}
+which is nice because:
+\begin{equation*}
+\log d_{\phi} (x, \epsilon) = \sum_i \log |L_{ii}|
+\end{equation*}
+<h4> Computing $\log p_{\theta} (x, z)$</h4>
+The other term in ELBO's 1-sample MC estimate comes from the generator network:
+\begin{equation*}
+\log p_{\theta} (x, z) = \log p_{\theta}(z) + \log p_{\theta} (x | z)
+\end{equation*}
+We evaluate it using $z$ sampled as above with reparameterization trick, as well as task-specific generative models. The prior $p_{\theta}(z)$ is taken to be Gaussian $\mathcal{N}(0,1)$. We also let $\log p_{\theta} (x | z)$ be a distribution parameterized by $z$ through generator network:
+<ul>
+<li>multivariate Gaussian - in case of real-valued data</li>
+<li>Bernoulli - in case of binary data</li>
+</ul>
+<h4>More interpretations of ELBO</h4>
+<h6>Reconstruction and Regularization losses</h6>
+A slight manipulation of ELBO gives another interesting interpretation of our objective:
+\begin{equation*}
+\text{ELBO}(x) = \mathbb{E}_{q_{\phi}(z|x)} \left [\log p_{\theta} (x, z) - \log q_{\phi}(z|x) \right]
+\end{equation*}
+\begin{equation*}
+\text{ELBO}(x) = \mathbb{E}_{q_{\phi}(z|x)} \left [\log p_{\theta} (z) + \log p_{\theta} (x | z) - \log q_{\phi}(z|x) \right]
+\end{equation*}
+\begin{equation*}
+\text{ELBO}(x) = \mathbb{E}_{q_{\phi}(z|x)} \log p_{\theta} (x | z) -  \mathbb{E}_{q_{\phi}(z|x)} \left [ \log q_{\phi}(z|x) - \log p_{\theta} (z) \right]
+\end{equation*}
+The first term is reconstruction error and the second term is KL divergence between posterior $q_{\phi}(z|x)$ and normal prior $p_{\theta} (z) = \mathcal{N}(0,1)$. The KL divergence is a regularizer or penalty term that keeps variance of $z$  close to 1. Without it, the reconstruction error wants to push $z$'s from different $x$'s far away in latent space [2]. This interpretation also makes comparing AEs and VAEs most straightforward [3].
+<h6>KL divergence</h6>
+It's well known maximum likelihood training training minimizes KL between empirical data distribution $q(x)$ and the one learnt by generative model $p_{\theta} (x)$:
+\begin{equation*}
+\begin{split}
+\mathbb{E}_{q(x)} \log p_{\theta} (x ) & = \mathbb{E}_{q(x)} \log q(x) - \mathbb{E}_{q(x)} \left [ \log q(x) - \log p_{\theta} (x )   \right] \\ & = -\mathcal{H} (q(x)) - \text{D}_{\text{KL}} (q(x) | p_{\theta} (x ))
+\end{split}
+\end{equation*}
+where data entropy $\mathcal{H} (q(x))$ is a constant. <br>
+$\text{ELBO}(\mathcal{D})$ for whole dataset is a lower bound to this, but is itself a KL in augmentated space if we look at the combination of  the empirical data distribution $q(x)$ and the inference model $q_{\phi}(x,z) = q(x) q_{\phi}(z|x)$:
+\begin{equation*}
+\begin{split}
+\text{ELBO}(\mathcal{D}) & = \mathbb{E}_{q(x)}  \mathbb{E}_{q_{\phi}(z|x)} \left [\log p_{\theta} (x, z) - \log q_{\phi}(z|x) \right] \\ & = -  \mathbb{E}_{q_{\phi}(x,z)}   \left [\log q_{\phi}(x,z) - \log p_{\theta} (x, z) \right] + \mathbb{E}_{q(x)} \log q(x) \\ & = - \text{D}_{\text{KL}} (q_{\phi}(x,z) | p_{\theta} (x, z) ) - \mathcal{H} (q(x))
+\end{split}
+\end{equation*}
+This shows ELBO can be viewed as a maximum likelihood objective in an augmented space.
+<h2>References</h2>
+[1]An Introduction to Variational Autoencoders: Diederik P. Kingma, Max Welling <br>
+[2] https://atcold.github.io/pytorch-Deep-Learning/en/week08/08-3/ <br>
+[3] https://stats.stackexchange.com/questions/347378/variational-autoencoder-why-reconstruction-term-is-same-to-square-loss

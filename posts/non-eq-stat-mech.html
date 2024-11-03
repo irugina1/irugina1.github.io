@@ -1,0 +1,139 @@
+---
+layout: post
+---
+
+<style>
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+}
+</style>
+
+<h1>Non-equilibrium stat mech</h1>
+<h2>Setup</h2>
+Consider both microscopic and macroscopic settings. In either case we look at:
+<ul>
+<li>system</li>
+<li>heat bath</li>
+<li>work done on the system - given by a generalized force $W = \int F d\lambda$ </li>
+</ul>
+
+<h2>Review</h2>
+
+<h3>First Law</h3>
+
+\begin{equation*}
+\Delta U = W + Q
+\end{equation*}
+where
+<ul>
+<li>$W$ is work done on the system</li>
+<li>$Q$ is heat absorbed by system</li>
+</ul>
+
+
+
+<h3>Second Law</h3>
+<h6>Clausius</h6> 
+There exists a state function $S$ such that
+\begin{equation*}
+\int_A^B \frac{dQ}{T} \leq \Delta S = S_B - S_A
+\end{equation*}
+For systems with a single heat reservoir Clausius and the first law say
+\begin{equation*}
+W \geq \Delta F = F_B - F_A,
+\end{equation*}
+where $F$ is the free energy $F = U - TS$.
+<h6>Cyclic Process - Thomson</h6>
+\begin{equation*}
+W_{cyc} \geq 0 \implies Q_{cyc} \leq 0
+\end{equation*}
+
+<h3>Conjuge processes</h3>
+Forward process $A \rightarrow B$ and reverse $B \rightarrow A$ performed by varying work parameters $\lambda^F_t$ and $\lambda^R_t$ with $0 \leq t \leq T$ such that $\lambda_t^R = \lambda_{T-t}^F$.
+
+<h6>Macroscopic Systems</h6>
+\begin{equation*}
+W^F \geq F_B - F_A = \Delta F
+\end{equation*}
+and
+\begin{equation*}
+W^R \geq F_A - F_B = -\Delta F
+\end{equation*}
+which implies $-W^R \leq \Delta F \leq W^F$.
+
+<h6>Microscopic Systems</h6>
+Discussion above, motivated by 2nd law for macroscopic systems, now holds only in expectation: $- \langle W^R \rangle \leq \Delta F \leq \langle W^F \rangle$.
+
+<h2>Thomson Law from Microscopic Principles</h2>
+Consider isolated cyclic process and microstate described by 
+\begin{equation*}
+x = (q, p) = (r_1, \dots r_m, p_1, \dots, p_m) 
+\end{equation*}
+with Hamiltonian $H = H(x, \lambda)$ which gives $\dot{q} = \frac{\partial H}{\partial p}$ and $\dot{p} = -\frac{\partial H}{\partial q}$. These equations of motion describe evolution from $x_0$ to $x_T$.
+
+<h6>Liouville Theorem</h6>
+Phase space volume is conserved. Look at Jacobian of transformation
+\begin{equation*}
+\left| \frac{\partial x_T}{\partial x_0} \right| = \text{det} \left(  \frac{\partial x_{T,i}}{\partial x_{0,j}}\right) = \exp \left( \int_0^T \nabla \dot{x} dt \right) = 1
+\end{equation*}
+because $\nabla \dot{x} = \sum_i \left[ \frac{\partial}{\partial q_i} \dot{q_i} +  \frac{\partial}{\partial p_i} \dot{p_i}\right] = 0$
+
+<h6>Implications on 2nd law</h6>
+Phase space volume conservation implies $W > 0$ for some initial conditions and $W < 0$ for others. The 2nd law is interpreted statistically 
+\begin{equation*}
+\langle W \rangle = \int dx_0 f_A(x_0) \left[ H_A(x_T(x_0)) - H_A(x_0) \right] \geq 0
+\end{equation*}
+where $f_A$ is some distribution of initial conditions describing the initial equilibrium state. Three candidates for this distribution are the microcanonical, canonical, and macrocanonical ensembles:
+<ul>
+<li>$f_A^{\mu}(x) = \frac{1}{\Sigma}\delta \left[ U_A - H_A(x) \right]$</li>
+<li>$f_A^{c}(x) = \frac{1}{Z}\exp \left[ -\beta H_A(x) \right]$</li>
+<li>$f_A^{M}(x) = \frac{1}{\Omega}\theta \left[ U_A - H_A(x) \right]$</li>
+</ul>
+$\langle W \rangle > 0$ holds for the canonical and macrocanonical ensembles, but not the microcanonical one. That's ok, doesn't break 2nd law.
+
+<h6>Proof for canonical ensemble</h6>
+Imagine we move from $x$ to $y(x)$ in phase space and look at:
+\begin{equation*}
+\langle \exp(-\beta W) \rangle = \int dx \frac{1}{Z} e^{-\beta H_A(x)} e^{-\beta [H_A(y(x)) - H_A(x) ]} = \frac{1}{Z} \int dx e^{-\beta H_A(y(x))} 
+\end{equation*}
+\begin{equation*}
+\langle \exp(-\beta W) \rangle =  \frac{1}{Z} \int dy e^{-\beta H_A(y)} = 1
+\end{equation*}
+where we used Liouville Theorem for the change of variable.
+From Jensen this shows that $\langle W \rangle \geq 0$ and on average the energy increases under cyclic Hamiltonian evolution.
+
+<h2>Nonequilibrium work and fluctuation relations</h2>
+We saw work $W$ is a stochastic variable and second law holds in expectation $\langle W \rangle \geq \Delta F$. Can we say more about fluctuations in work? Three important statements.
+<h6>Jarzynski equality</h6>
+\begin{equation*}
+\langle e^{-\beta W} \rangle= e^{-\beta \Delta F}
+\end{equation*}
+
+This is an equality that holds for irreversible microscopic processes! It also implies the inequality above $\langle W \rangle \geq \Delta F$. Moreover, it says fluctuations decay exponentially $P (W \leq \Delta F - n \cdot \beta^{-1}) \leq e^{-n}$. This shows violations of 2nd law are extremely rare and explains why we don't observe them macroscopically.
+
+<h6>Crooks fluctuation theorem</h6>
+Relates distributions over work $W$ during forward and reverse processes:
+\begin{equation*}
+\frac{p_F(W)}{p_R(-W)} = e^{\beta(W-\Delta F)}
+\end{equation*}
+Powerful statement because it relates two distributions which can take various forms based on how we perturb the system and yet this always holds. Also: distributions always crosss at $W = \Delta F$.
+
+
+<h6>Hummer and Szabo</h6>
+
+\begin{equation*}
+\langle \delta(x-x_t)e^{-\beta w_t} \rangle = \frac{1}{Z_A} e^{-\beta H(x, \lambda_t)}
+\end{equation*}
+<ul>
+<li>$x$ is independent variable - any point in phase space</li>
+<li>$w_t$ work performed up to $x_t$</li>
+<li>RHS is partition except for not properly normalized</li>
+</ul>
+Discussion: LHS is ensemble of trajectories in phase space. Averaging over that exponential (time-dependent weight) you can reconstruct equilibrium states along path. Consequence of Feynman-Kac theorem.
+
+<h2>References</h2>
+
+Equalities and Inequalities: Irreversibility and the Second Law of Thermodynamics at the Nanoscale - Christopher Jarzynski

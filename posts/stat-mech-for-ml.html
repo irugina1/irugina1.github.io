@@ -1,0 +1,114 @@
+---
+layout: post
+---
+
+<style>
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 80%;
+}
+</style>
+
+<h1>Simulated Annealing</h1>
+
+Probabilistic method of finding global minimum of a function that may possess several global minima. Review finite set case.
+
+<h6>Setup</h6>
+
+<ul>
+<li>finite set $S$</li>
+<li>cost function $J : S \rightarrow \mathbb{R}$ </li>
+<li>set $S^* \subseteq S$ of global minima</li>
+<li>neighbors $S(i) \subseteq S $ of $i \in S$</li>
+<li>$\forall x \in S$, a collection $q_{ij}, j \in S(i)$ s.t. $\sum_{j}q_{ij}$ = 1</li>
+<li>cooling schedule $T: \mathbb{N} \rightarrow (0, \infty)$ nonincreasing</li>
+<li>initial state $x(0) \in S$</li>
+</ul>
+
+<h6>SA formulation</h6>
+
+SA algorithm is a discrete-time inhomogeneous Markov chain $x(t)$ with transitions:
+
+\begin{equation*}
+P \left [ x(t+1) = j | x(t) = i \right ] = q_{ij} \exp \left (-\frac{1}{T(t)}\max\{0, J(j) - J(i)\} \right)
+\end{equation*}
+
+<h6>Motivation - look at homogeneous Markov Chain</h6>
+
+For a fixed temperature $T$ we consider the corresponding homegeneous Markov Chain and look at its stationary distribution, which turns out to be the Gibbs distribution: $\pi_T(i) = \frac{1}{Z_T} \exp \left [ -\frac{J(i)}{T} \right ]$. We can see as $T \rightarrow 0$, the stationary distribution $\pi_T$ will concentrate on local minima $S^*$.
+
+<h4>Convergence</h4>
+
+<h6>Useful definitions</h6>
+<strong>1.</strong> We say that state $i$ communicates with $S^*$ at height $h$ if there exists a path from $i$ to some element of $S^*$ s.t. largest value of $J$ along path is $J(i) + h$. <br>
+<strong>2.</strong>  Let $d^*$ be the smallest number such that $\forall i \in S$, $i$ communicates with $S^*$ at height $d^*$.
+
+
+<h6>Theorem for convergence</h6>
+SA converges $\iff$:
+<ul>
+<li>$\lim_{t \rightarrow \infty}T(t) = 0$</li>
+<li>$\sum_{t=1}^{\infty} \exp \left [ -\frac{d^*}{T(t)} \right ] = \infty$</li>
+</ul>
+
+<h6>Discussion: intuition</h6>
+For cooling schedule $T(t) = \frac{d}{\log t} $ condition above implies $d \geq d^*$. 
+<br>
+The constant $d^*$ characterizes how difficult it is to escape local minima. Consider we are stuck in one such bad minima: then, the probability we can escape it is $\propto \exp \left [ \frac{-d^*}{T(t)} \right ]$. Then the condition in the theorem above requires that $\infty$ of attempts to escape will be succesful. 
+
+<h6>Discussion: homogeneous MC analysis</h6>
+The MC above behaves $\propto$ schedule where we stay at $T(t) = \frac{1}{k}$ for a time $\exp(kd)$. It turns out the relaxation time of such a homegeneous MC is $\exp(kd^*)$, where $d^*$ is the one from above. Then, the condition $d > d^*$ is requiring we run each of the homogeneous MC for a non-negligible fraction of its relaxation time.
+
+
+<h1>Annealed Importance Sampling</h1>
+<h6>Setup</h6>
+We are interested in computing expectation value of some quantity $a(x)$ through Monte-Carlo estimates.  Target distribution $p(x) \propto f(x)$. We know $f(x)$ but cannot sample from $p(x)$. We are able to sample from a distribution $\propto g(x)$. 
+<h6>Importance Sampling</h6>
+Estimate $\mathbb{E}_p a$ using $N$ samples $x^{(i)}$ from distribution $\propto g$ and weights $w^{(i)} = \frac{f(x^{(i)})}{g(x^{(i)})}$:
+\begin{equation*}
+\bar{a} = \frac{\sum_i w^{(i)}a(x^{(i)})}{\sum_i w^{(i)}}
+\end{equation*}
+The denominator above approximates the ratio of normalizing constants for $f$ and $g$:
+\begin{equation*}
+\lim_{N \rightarrow \infty} \frac{1}{N} \sum_{i=1}^N w^{(i)} = \frac{Z_f}{Z_g} = \frac{\int f(x) dx}{\int g(x) dx}
+\end{equation*}
+<h6>Annealed Importance Sampling</h6>
+Instead of the above, we draw from a simple distribution, but pass the sample through a linear Markov Chain first and use the final result for importance sampling. <br> 
+We consider a sequence of distributions given by $f_n, f_{n-1}, \dots, f_1, f_0$. Usual scheme:
+\begin{equation*}
+  f_j(x) = f_0(x)^{\beta_j}f_n(x)^{1 - \beta_j}
+\end{equation*}
+, with $1 = \beta_0 > \beta_1 > \dots > \beta_n = 0$. We draw $x_{n-1} \propto p_n(x)$ and then construct the sequence
+\begin{equation*}
+x_{n-1} \xrightarrow{\color{blue}{T_{n-1}}} x_{n-2} \xrightarrow{\color{blue}{T_{n-2}}} \dots x_2 \xrightarrow{\color{blue}{T_{2}}} x_1 \xrightarrow{\color{blue}{T_{1}}} x_0
+\end{equation*}
+using Markov Kernels $T_j$ that leave probabilities $p_j$ invariant.
+
+<h6>Importance Weights</h6>
+To compute the importance weights in annealed importance sampling, we look at extended state space $(x_0, x_1, \dots x_{n-1})$. The joint pdf in this extended space of a sequence corresponding to an $x_0$ from target distribution is proportional to:
+\begin{equation*}
+f(x_0, x_1, \dots x_{n-1}) = f_0(x_0) \cdot \color{red}{\widetilde{T}_{1}}(x_0, x_1) \cdot  \color{red}{\widetilde{T}_{2}}(x_1, x_2) \dots  \color{red}{\widetilde{T}_{n-1}}(x_{n-2}, x_{n-1})
+\end{equation*}
+, where we used reverse transition kernels
+\begin{equation*}
+\color{red}{\widetilde{T}_{j}}(x_{j-1}, x_j) = \color{blue}{T_{j}}(x_{j}, x_{j-1}) \frac{f_j(x_j)}{f_j(x_{j-1})}
+\end{equation*}
+The above becomes
+\begin{equation*}
+f(x_0, x_1, \dots x_{n-1}) = f_0(x_0) \cdot \left( \Pi_{j=1}^{n-1} \color{blue}{T_{j}}(x_{j}, x_{j-1}) \right ) \cdot \left( \Pi_{j=1}^{n-1} \frac{f_j(x_j)}{f_j(x_{j-1})} \right) 
+\end{equation*}
+<br>
+The joint pdf of sequence $(x_0, x_1, \dots x_{n-1})$ under the proposal we constructed above is:
+\begin{equation*}
+g(x_0, x_1, \dots x_{n-1}) = f_n(x_{n-1}) \left( \Pi_{j=1}^{n-1} \color{blue}{T_{j}}(x_{j}, x_{j-1}) \right )
+\end{equation*}
+<br>
+The importance weight is:
+\begin{equation*}
+w = \frac{f(x_0, x_1, \dots x_{n-1})}{g(x_0, x_1, \dots x_{n-1})} = f_0(x_0) \left( \Pi_{j=1}^{n-1} \frac{f_j(x_j)}{f_j(x_{j-1})} \right) \frac{1}{f_n(x_{n-1})} = \Pi_{j=0}^{n-1} \frac{f_j(x_j)}{f_{j+1}(x_j)}
+\end{equation*}
+
+<h2>References</h2>
+[1] Annealed Importance Sampling - https://arxiv.org/abs/physics/9803008

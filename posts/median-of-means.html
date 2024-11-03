@@ -1,0 +1,42 @@
+---
+layout: post
+---
+
+<style>
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+}
+</style>
+
+<h1>Median of Means Estimator</h1>
+
+All this follows <a href="https://www.youtube.com/watch?v=QJzHp74UO00">this great lecture</a>. We have $N$ iid samples from a distribution with $\mu$ and $\sigma$ and want to compute a mean estimator.
+<h3>Mean estimator and Chebyshev</h3>
+For a sample $x$:
+\begin{equation*}
+    \mathbb{P}(|x -\mu| \geq \gamma \sigma) \leq \frac{1}{\gamma^2}
+\end{equation*}
+Mean estimator $\hat{x} = \frac{1}{N}\sum_ix_i$ has mean $\mu$ and variance $\frac{\sigma}{\sqrt{N}}$ so Chebyshev tells us that:
+\begin{equation*}
+    \mathbb{P}(|\hat{x}-\mu| \geq \gamma \sigma) \leq \frac{1}{N\gamma^2}
+\end{equation*}
+<h3>Median of means for exponentially better bound</h3>
+Break the $N = n \cdot d$ samples into $d$ groups of $n$ samples each and compute $d$ means, one for each group: $\hat{x}_i = \frac{1}{n} \sum_{j=1}^n x_{ij}$. The final estimator is the median $\hat{x}$ of these $\hat{x}_i$ and we want to bound the probability it's wrong by more than $\gamma \sigma$. 
+
+Note that this can only happen if $\geq \frac{d}{2}$ of the $\hat{x}_i$ estimators are wrong by more than $\gamma \sigma$. Let $\xi_i$ be indicator binary random variable that indicates if $|x_i-\mu| \geq \gamma \sigma$. We know:
+\begin{equation*}
+    \mathbb{E}\left[\xi_i\right] \leq \frac{1}{n\gamma^2}
+\end{equation*}
+The neat part of this proof is that now we're working with bounded $\xi_i$'s and can thus write Hoeffding's inequality
+\begin{equation*}
+    \mathbb{P}\left[ \sum_i \xi_i - \frac{d}{n\gamma^2} > \epsilon \right] \leq \exp \left( -2 \epsilon^2 / d\right)
+\end{equation*}
+We set out to bound $\mathbb{P}\left[ \sum_i \xi_i  > \frac{d}{2}\right]$ so let's plug in $\gamma = \frac{2}{\sqrt{n}}$ and $\epsilon = \frac{d}{4} $ to get
+\begin{equation*}
+    \mathbb{P}(|\hat{x}-\mu| \geq \gamma \sigma) \leq \exp \left( -\frac{d}{8}\right)
+\end{equation*}
+As before, the number of samples we average over determines the estimator's accuracy, but now we have an exponential bound for confidence from taking the median.
+
