@@ -4,7 +4,7 @@ layout: default
 
 Physics :arrow_forward: CS :arrow_forward: ML
 
-[resume](./IleanaRuginaResume2022.pdf), [github](https://github.com/irugina)
+[resume](./IleanaRuginaResume2024.pdf), [github](https://github.com/irugina1)
 
 ### Workshop Papers
 * Meta-Learning and Self-Supervised Pretraining for Storm Event Imagery Translation: [Write-up](https://arxiv.org/abs/2112.11929), [presentation](https://recorder-v3.slideslive.com/#/share?share=64835&s=e0d91039-cc7f-4909-af52-40322116f566&fbclid=IwAR2Z_s2evBDDMnVGCYgG5ga1xystKZA3gJ2ujeDMq7MSkZbujIr94l2V3Z4) (@ AI for Earth and Space Science ICLR22 workshop)
