@@ -4,7 +4,7 @@ layout: default
 
 Physics :arrow_forward: CS :arrow_forward: ML
 
-[resume](./IleanaRuginaResume2024.pdf), [github](https://github.com/irugina1)
+[resume](./IleanaRuginaResume2025.pdf), [github](https://github.com/irugina1)
 
 ### Workshop Papers
 * Adib Hasan, **Ileana Rugina**, Alex Wang; *[Pruning for Protection: Increasing Jailbreak Resistance in Aligned LLMs Without Fine-Tuning](https://arxiv.org/abs/2401.10862)*; EMNLP 2024 Workshop BlackBoxNLP
@@ -31,4 +31,3 @@ These notes contain direct excerpt from relevant papers/ lecture notes/ videos.
 * [Median of Means](./posts/median-of-means.html)
 * [Diffusion Models](./attachments/Diffusion_Models.pdf)
 * [GPU Puzzles](./posts/gpu_puzzles.html)
-* [Mixed Precision](./posts/fp.html)
